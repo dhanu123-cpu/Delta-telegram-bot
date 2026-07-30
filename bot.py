@@ -5,20 +5,15 @@ import pandas as pd
 import numpy as np
 from threading import Thread
 from flask import Flask
-
 app = Flask(__name__)
-
 # Telegram & Trading Configuration
-BOT_TOKEN = 8380158711:AAHDYOV81|JvsnQkMaQfa7y
-qkOVeOEFmpxo
+BOT_TOKEN = 8380158711:AAHDYOV81|JvsnQkMaQfa7yqkOVeOEFmpxo
 CHAT_ID = "7755539827"
 TIMEFRAMES = ["1m", "3m", "5m", "15m", "30m", "60m"]
 SYMBOL = "BTCUSDT"
-
 @app.route('/')
 def home():
     return "EMA Crossover Bot is running 24/7!"
-
 def send_telegram_signal(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
@@ -81,7 +76,6 @@ def run_trading_bot():
         except Exception as e:
             print("Loop Error:", e)
         time.sleep(10)
-
 if __name__ == "__main__":
     bot_thread = Thread(target=run_trading_bot)
     bot_thread.daemon = True
