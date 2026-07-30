@@ -1,103 +1,98 @@
 import os
-import threading
+import time
+import requests
+import pandas as pd
+import numpy as np
+from threading import Thread
 from flask import Flask
 
 app = Flask(__name__)
 
+# Telegram & Trading Configuration
+BOT_TOKEN = "8380158711:AAHDYOV81IJvSnqkNaQfa7yqk0vOEfmpxo"
+CHAT_ID = "7755539827"
+TIMEFRAMES = ["1m", "3m", "5m", "15m", "30m", "60m"]
+SYMBOL = "BTCUSDT"  # Aap apna symbol yahan change kar sakte ho
+
 @app.route('/')
 def home():
-    return "Bot is live!"
+    return "EMA Crossover Bot is running 24/7!"
 
-def run_flask():
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
-
-threading.Thread(target=run_flask, daemon=True).start()
-import time
-import requests
-import pandas as pd
-BOT_TOKEN = "8380158711:AAHDYOV81IJVsnQkNaQfa7yqk0VeOEFmpxo"
-CHAT_ID = "7755539827"
-["TIMEFRAMES = 1m", "3m", "5m", "15m", "30m", "60m"]
 def send_telegram_signal(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message,
+        "parse_mode": "HTML"
+    }
     try:
-        res = requests.post(url, json=payload)
-        if res.status_code == 200:
-            print("Signal sent to Telegram successfully!")
-        else:
-            print("Telegram Error:", res.json())
+        requests.post(url, json=payload)
     except Exception as e:
-        print("Error sending signal:", e)
-def fetch_delta_candles():
-    end_time = int(time.time())
-    start_time = end_time - (100 * 300)
-    symbols_to_try = ["BTCUSD", "BTC_USDT"]
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    for symbol in symbols_to_try:
-        url = f"https://api.delta.exchange/v2/history/candles?symbol={symbol}&resolution={TIMEFRAME}&start={start_time}&end={end_time}"
-        try:
-            res = requests.get(url, headers=headers)
-            if res.status_code == 200:
-                data_json = res.json()
-                result = data_json.get("result", [])
-                if data_json.get("success") and len(result) > 0:
-                    df = pd.DataFrame(result)
+        print("Telegram Send Error:", e)
 
-                    if 'close' in df.columns:
-                        pass
-                    elif 'c' in df.columns:
-                        df = df.rename(columns={'c': 'close', 'h': 'high', 'l': 'low', 'o': 'open'})
-                    elif len(df.columns) >= 5 and isinstance(df.columns[0], int):
-                        df = df.rename(columns={1: 'open', 2: 'high', 3: 'low', 4: 'close'})
+def fetch_candles(timeframe):
+    # Delta Exchange public candlestick API
+    url = f"https://api.delta.exchange/v2/history/candles?resolution={timeframe}&symbol={SYMBOL}"
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        if data.get("success") and "result" in data:
+            df = pd.DataFrame(data["result"], columns=["time", "open", "high", "low", "close", "volume"])
+            df["close"] = df["close"].astype(float)
+            df = df.sort_values("time").reset_index(drop=True)
+            return df
+    except Exception as e:
+        print(f"API Error for {timeframe}:", e)
+    return None
 
-                    df['close'] = df['close'].astype(float)
-                    df['high'] = df['high'].astype(float)
-                    df['low'] = df['low'].astype(float)
-                    df['open'] = df['open'].astype(float)
-
-                    df = df.iloc[::-1].reset_index(drop=True)
-                    return df, symbol
-        except Exception as e:
-            print("Error fetching candles:", e)
-            
-    print("API returned empty data state for all symbols")
-    return None, "BTCUSD"
-
-def check_strategy():
-    df, active_symbol = fetch_delta_candles()
+def check_strategy(tf):
+    df = fetch_candles(tf)
     if df is None or len(df) < 30:
         return
 
+    # Calculate 9 and 20 EMAs
     df['ema9'] = df['close'].ewm(span=9, adjust=False).mean()
     df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
 
-    c3 = df.iloc[-4]
-    c2 = df.iloc[-3]
-    c1 = df.iloc[-2]
-# Updated Timeframes
+    # Get last 3 candles for crossover detection
+    c3 = df.iloc[-3]
+    c2 = df.iloc[-2]
+    c1 = df.iloc[-1]
 
-# Simple Crossover Conditions
-    cross_up = (c3['ema9'] < c3['ema20']) and (c2['ema9'] > c2['ema20'])
-    cross_down = (c3['ema9'] > c3['ema20']) and (c2['ema9'] < c2['ema20'])
+    # Crossover Conditions
+    cross_up = (c3['ema9'] <= c3['ema20']) and (c2['ema9'] > c2['ema20'])
+    cross_down = (c3['ema9'] >= c3['ema20']) and (c2['ema9'] < c2['ema20'])
 
     # BUY SIGNAL
     if cross_up:
-        msg = f"🚀 <b>DELTA BUY SIGNAL ({active_symbol})</b>\nEMA 9 Crossed Above EMA 20"
+        msg = f"🚀 <b>DELTA BUY SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n🟢 EMA 9 Crossed Above EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
 
     # SELL SIGNAL
     if cross_down:
-        msg = f"🔻 <b>DELTA SELL SIGNAL ({active_symbol})</b>\nEMA 9 Crossed Below EMA 20"
+        msg = f"🔻 <b>DELTA SELL SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n🔴 EMA 9 Crossed Below EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
-print("EMA Crossover Strategy Bot Running 24/7...")
-send_telegram_signal("🤖 Test Alert: Bot is working!")
-# Main Execution Loop
-while True:
-    try:
-        for tf in TIMEFRAMES:
-            check_strategy(tf)
-    except Exception as e:
-        print("Loop Error:", e)
-    time.sleep(10)
+
+def run_trading_bot():
+    print("EMA Crossover Strategy Bot Running 24/7...")
+    send_telegram_signal("🤖 Test Alert: EMA Crossover Bot is successfully online and monitoring markets!")
+    
+    # Main Execution Loop
+    while True:
+        try:
+            for tf in TIMEFRAMES:
+                check_strategy(tf)
+                time.sleep(2)  # Har timeframe ke beech 2 sec gap
+        except Exception as e:
+            print("Loop Error:", e)
+        time.sleep(10)  # Saare timeframes scan hone ke baad 10 sec wait
+
+if _name_ == "_main_":
+    # Background thread me trading bot start hoga
+    bot_thread = Thread(target=run_trading_bot)
+    bot_thread.daemon = True
+    bot_thread.start()
+    
+    # Flask server web service ke liye run hoga
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
