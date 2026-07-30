@@ -92,7 +92,7 @@ def check_strategy():
         msg = f"🔻 <b>DELTA SELL SIGNAL ({active_symbol})</b>\nEMA 9 Crossed Below EMA 20"
         send_telegram_signal(msg)
 print("EMA Crossover Strategy Bot Running 24/7...")
-
+send_telegram_signal("🤖 Test Alert: Bot is working!")
 # Main Execution Loop
 while True:
     try:
