@@ -19,7 +19,7 @@ import pandas as pd
 
 BOT_TOKEN = "8380158711:AAHDYOV81IJVsnQkNaQfa7yqk0VeOEFmpxo"
 CHAT_ID = "7755539827"
-TIMEFRAME = "5m"
+TIMEFRAME = ["1m", "3m", "5m", "15m"]
 
 def send_telegram_signal(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
