@@ -7,7 +7,7 @@ from threading import Thread
 from flask import Flask
 app = Flask(__name__)
 # Telegram & Trading Configuration
-BOT_TOKEN = "8380158711:AAG31VOUNc1L-Aw_qNAiOMoMUF2FQAQkvbo"
+BOT_TOKEN = "8380158711:AAG31vOUNc1L-Aw_qNAiOMoMUF2FQAQkvbO"
 CHAT_ID = "7755539827"
 TIMEFRAMES = ["1m", "3m", "5m", "15m", "30m", "60m"]
 SYMBOL = "BTCUSDT"
