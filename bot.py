@@ -9,7 +9,8 @@ from flask import Flask
 app = Flask(__name__)
 
 # Telegram & Trading Configuration
-BOT_TOKEN = "8380158711:AAHDYOV81IJvSnqkNaQfa7yqk0vOEfmpxo"
+BOT_TOKEN = 8380158711:AAHDYOV81|JvsnQkMaQfa7y
+qkOVeOEFmpxo
 CHAT_ID = "7755539827"
 TIMEFRAMES = ["1m", "3m", "5m", "15m", "30m", "60m"]
 SYMBOL = "BTCUSDT"
