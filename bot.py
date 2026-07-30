@@ -16,11 +16,9 @@ threading.Thread(target=run_flask, daemon=True).start()
 import time
 import requests
 import pandas as pd
-
 BOT_TOKEN = "8380158711:AAHDYOV81IJVsnQkNaQfa7yqk0VeOEFmpxo"
 CHAT_ID = "7755539827"
-TIMEFRAME = ["1m", "3m", "5m", "15m"]
-
+["TIMEFRAMES = 1m", "3m", "5m", "15m", "30m", "60m"]
 def send_telegram_signal(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
@@ -32,14 +30,11 @@ def send_telegram_signal(message):
             print("Telegram Error:", res.json())
     except Exception as e:
         print("Error sending signal:", e)
-
 def fetch_delta_candles():
     end_time = int(time.time())
     start_time = end_time - (100 * 300)
-    
     symbols_to_try = ["BTCUSD", "BTC_USDT"]
     headers = {'User-Agent': 'Mozilla/5.0'}
-    
     for symbol in symbols_to_try:
         url = f"https://api.delta.exchange/v2/history/candles?symbol={symbol}&resolution={TIMEFRAME}&start={start_time}&end={end_time}"
         try:
@@ -81,29 +76,28 @@ def check_strategy():
     c3 = df.iloc[-4]
     c2 = df.iloc[-3]
     c1 = df.iloc[-2]
+# Updated Timeframes
 
-    # SELL STRATEGY
-    cross_down = (c3['ema9'] > c3['ema20']) and (c2['ema9'] < c2['ema20'])
-    retest_bearish = c2['high'] >= c2['ema9']
-    is_red_c1 = c1['close'] < c1['open']
-
-    if cross_down and retest_bearish and is_red_c1:
-        msg = f"🔻 <b>DELTA SELL SIGNAL ({active_symbol})</b> 🔻\n\n• <b>Strategy:</b> 9/20 EMA Cross Down + Retest + Red Confirmation\n• <b>Price:</b> ${c1['close']}\n• <b>Timeframe:</b> {TIMEFRAME}"
-        send_telegram_signal(msg)
-
-    # BUY STRATEGY
+# Simple Crossover Conditions
     cross_up = (c3['ema9'] < c3['ema20']) and (c2['ema9'] > c2['ema20'])
-    retest_bullish = c2['low'] <= c2['ema9']
-    is_green_c1 = c1['close'] > c1['open']
+    cross_down = (c3['ema9'] > c3['ema20']) and (c2['ema9'] < c2['ema20'])
 
-    if cross_up and retest_bullish and is_green_c1:
-        msg = f"🚀 <b>DELTA BUY SIGNAL ({active_symbol})</b> 🚀\n\n• <b>Strategy:</b> 9/20 EMA Cross Up + Retest + Green Confirmation\n• <b>Price:</b> ${c1['close']}\n• <b>Timeframe:</b> {TIMEFRAME}"
+    # BUY SIGNAL
+    if cross_up:
+        msg = f"🚀 <b>DELTA BUY SIGNAL ({active_symbol})</b>\nEMA 9 Crossed Above EMA 20"
         send_telegram_signal(msg)
 
+    # SELL SIGNAL
+    if cross_down:
+        msg = f"🔻 <b>DELTA SELL SIGNAL ({active_symbol})</b>\nEMA 9 Crossed Below EMA 20"
+        send_telegram_signal(msg)
 print("EMA Crossover Strategy Bot Running 24/7...")
+
+# Main Execution Loop
 while True:
     try:
-        check_strategy()
+        for tf in TIMEFRAMES:
+            check_strategy(tf)
     except Exception as e:
         print("Loop Error:", e)
-    time.sleep(60)
+    time.sleep(10)
