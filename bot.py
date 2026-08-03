@@ -82,7 +82,7 @@ def run_trading_bot():
             print("Loop Error:", e)
             time.sleep(10)
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     bot_thread = Thread(target=run_trading_bot)
     bot_thread.daemon = True
     bot_thread.start()
