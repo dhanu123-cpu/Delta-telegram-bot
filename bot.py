@@ -42,23 +42,21 @@ def fetch_candles(timeframe):
     return None
 
 def check_strategy(tf):
-    df = fetch_candles(tf)
-    if df is None or len(df) < 30:
-        return
-
-    df['ema9'] = df['close'].ewm(span=9, adjust=False).mean()
-    df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
-
-    c3 = df.iloc[-3]
+    # Yahan pe data fetch hota hoga (jaise df = ...)
+    
+    # Ye variables function ke andar hone chahiye:
     c2 = df.iloc[-2]
     c1 = df.iloc[-1]
-cross_up = (c2['ema9'] < c2['ema20']) and (c1['ema9'] >= c1['ema20'])
-cross_down = (c2['ema9'] > c2['ema20']) and (c1['ema9'] <= c1['ema20'])
-if cross_up:
-        msg = f"🚀 <b>DELTA BUY SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n🟢 EMA 9 Crossed Above EMA 20\n💰 Price: {c1['close']}"
+    
+    cross_up = (c2['ema9'] < c2['ema20']) and (c1['ema9'] >= c1['ema20'])
+    cross_down = (c2['ema9'] > c2['ema20']) and (c1['ema9'] <= c1['ema20'])
+    
+    if cross_up:
+        msg = f"🟢 <b>DELTA BUY SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n📈 EMA 9 Crossed Above EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
-if cross_down:
-        msg = f"🔻 <b>DELTA SELL SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n🔴 EMA 9 Crossed Below EMA 20\n💰 Price: {c1['close']}"
+
+    if cross_down:
+        msg = f"🔴 <b>DELTA SELL SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n📉 EMA 9 Crossed Below EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
 def run_trading_bot():
     print("EMA Crossover Strategy Bot Running 24/7...")
