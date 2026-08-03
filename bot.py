@@ -57,11 +57,9 @@ cross_down = (c2['ema9'] > c2['ema20']) and (c1['ema9'] <= c1['ema20'])
 if cross_up:
         msg = f"🚀 <b>DELTA BUY SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n🟢 EMA 9 Crossed Above EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
-
 if cross_down:
         msg = f"🔻 <b>DELTA SELL SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n🔴 EMA 9 Crossed Below EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
-
 def run_trading_bot():
     print("EMA Crossover Strategy Bot Running 24/7...")
     send_telegram_signal("🤖 Test Alert: EMA Crossover Bot is successfully online and monitoring markets!")
