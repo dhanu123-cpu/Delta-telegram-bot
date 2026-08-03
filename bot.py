@@ -58,7 +58,7 @@ if cross_up:
         msg = f"🚀 <b>DELTA BUY SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n🟢 EMA 9 Crossed Above EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
 
-    if cross_down:
+if cross_down:
         msg = f"🔻 <b>DELTA SELL SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n🔴 EMA 9 Crossed Below EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
 
