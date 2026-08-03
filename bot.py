@@ -2,22 +2,26 @@ import os
 import time
 import requests
 import pandas as pd
-import numpy as np
 from threading import Thread
 from flask import Flask
-app = Flask(__name__)
-# Telegram & Trading Configuration
-BOT_TOKEN = "8380158711:AAG31v0UNc1L-Aw_qNAiOMoMUF2FQAQkvb0"
-CHAT_ID = "7755539827"
-TIMEFRAMES = ["1m", "3m", "5m", "15m", "30m", "60m"]
-SYMBOL = "BTCUSDT"
+
+app = Flask(_name_)
+
 @app.route('/')
 def home():
-    return "EMA Crossover Bot is running 24/7!"
+    return "Delta Crossover Bot is running!"
+
+# Telegram Configuration
+TELEGRAM_BOT_TOKEN = os.environ.get("8380158711:AAG31v0UNc1L-Aw_qNAiOMoMUF2FQAQkvb0")
+TELEGRAM_CHAT_ID = os.environ.get("7755539827")
+
+SYMBOL = "BTCUSDT"  # Aap apna symbol yahan change kar sakte hain
+TIMEFRAMES = ["15m", "1h"]  # Apne timeframes set karein
+
 def send_telegram_signal(message):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
-        "chat_id": CHAT_ID,
+        "chat_id": TELEGRAM_CHAT_ID,
         "text": message,
         "parse_mode": "HTML"
     }
@@ -36,21 +40,27 @@ def fetch_candles(timeframe):
             df = pd.DataFrame(data["result"], columns=["time", "open", "high", "low", "close", "volume"])
             df["close"] = df["close"].astype(float)
             df = df.sort_values("time").reset_index(drop=True)
+            
+            # EMA Calculation
+            df['ema9'] = df['close'].ewm(span=9, adjust=False).mean()
+            df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
             return df
     except Exception as e:
         print(f"API Error for {timeframe}:", e)
     return None
 
 def check_strategy(tf):
-    # Yahan pe data fetch hota hoga (jaise df = ...)
-    
-    # Ye variables function ke andar hone chahiye:
+    df = fetch_candles(tf)
+    if df is None or len(df) < 3:
+        return
+
+    # Closed candles for crossover logic
     c2 = df.iloc[-2]
     c1 = df.iloc[-1]
-    
+
     cross_up = (c2['ema9'] < c2['ema20']) and (c1['ema9'] >= c1['ema20'])
     cross_down = (c2['ema9'] > c2['ema20']) and (c1['ema9'] <= c1['ema20'])
-    
+
     if cross_up:
         msg = f"🟢 <b>DELTA BUY SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n📈 EMA 9 Crossed Above EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
@@ -58,6 +68,7 @@ def check_strategy(tf):
     if cross_down:
         msg = f"🔴 <b>DELTA SELL SIGNAL ({SYMBOL})</b>\n⏱️ Timeframe: <b>{tf}</b>\n📉 EMA 9 Crossed Below EMA 20\n💰 Price: {c1['close']}"
         send_telegram_signal(msg)
+
 def run_trading_bot():
     print("EMA Crossover Strategy Bot Running 24/7...")
     send_telegram_signal("🤖 Test Alert: EMA Crossover Bot is successfully online and monitoring markets!")
@@ -69,11 +80,12 @@ def run_trading_bot():
                 time.sleep(2)
         except Exception as e:
             print("Loop Error:", e)
-        time.sleep(10)
-if __name__ == "__main__":
+            time.sleep(10)
+
+if _name_ == "_main_":
     bot_thread = Thread(target=run_trading_bot)
     bot_thread.daemon = True
     bot_thread.start()
-    
+
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
