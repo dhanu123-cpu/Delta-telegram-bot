@@ -12,8 +12,8 @@ def home():
     return "Delta Crossover Bot is running!"
 
 # Telegram Configuration
-TELEGRAM_BOT_TOKEN = os.environ.get"8380158711:AAG31v0UNc1L-Aw_qNAiOMoMUF2FQAQkvb0"
-TELEGRAM_CHAT_ID = os.environ.get"7755539827"
+TELEGRAM_BOT_TOKEN = os.environ.get("8380158711:AAG31v0UNc1L-Aw_qNAiOMoMUF2FQAQkvb0")
+TELEGRAM_CHAT_ID = os.environ.get("7755539827")
 
 SYMBOL = "BTCUSDT"  # Aap apna symbol yahan change kar sakte hain
 TIMEFRAMES = ["15m", "1h"]  # Apne timeframes set karein
